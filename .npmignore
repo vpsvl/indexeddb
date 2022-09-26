@@ -1,0 +1,14 @@
+.git
+.idea
+.vscode
+.DS_Store
+node_modules
+src
+.babelrc
+.gitignore
+.npmignore
+rollup.config.js
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+*.log
