@@ -76,7 +76,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param store 可选. 不传会将undefined转为字符串'undefined'
    * @returns {Promise}
    */
-  async function hasStore({store}) {
+  async function hasStore({store} = {}) {
     try {
       if (!db) {
         await open();
@@ -92,10 +92,10 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param store  可选. 要创建的objectStore的名字, 不传会将undefined转为字符串'undefined'
    * @param index  可选. 需要创建objectStore索引时传入,key为字段名,value为boolean表示是否允许重复
    * @param key   可选. 主键名, 对应每条数据必须为包含keyPath属性的对象; 不传则使用主键自增(默认从1开始, 如果之前有number类型的主键, 会对最大一个number类型主键取整数, 然后加1作为自增后的主键)
-   *    * @param replace  可选. 如果表存在是否先删除再创建, 默认不删除不创建
+   * @param replace  可选. 如果表存在是否先删除再创建, 默认不删除不创建
    * @returns {Promise}
    */
-  function addStore({store, index, key, replace = false}) {
+  function addStore({store, index, key, replace = false} = {}) {
     return new Promise((resolve, reject) => {
       close();
       version = Date.now();
@@ -135,7 +135,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param store 可选. 删除的objectStore名, 不传会将undefined转为字符串'undefined'
    * @returns {Promise}
    */
-  function delStore({store}) {
+  function delStore({store} = {}) {
     return new Promise((resolve, reject) => {
       close();
       version = Date.now();
@@ -165,7 +165,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param key 必选. 主键
    * @returns {Promise}
    */
-  function get({store, key}) {
+  function get({store, key} = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         if (!db) {
@@ -199,7 +199,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param filter 可选. 过滤数据方法
    * @returns {Promise}
    */
-  function find({store, index, start, end, direction, filter}) {
+  function find({store, index, start, end, direction, filter} = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         if (!db) {
@@ -249,7 +249,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param filter 可选. 过滤数据方法
    * @returns {Promise}
    */
-  function findPage({store, index, start, end, direction, page = 1, pageSize = 10, filter}) {
+  function findPage({store, index, start, end, direction, page = 1, pageSize = 10, filter} = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         page = parseInt(page);
@@ -323,7 +323,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param end  可选. 索引结束值, 只查单个索引, 传入跟start相同的值即可; 查询所有小于end的数据, start不传即可
    * @returns {Promise}
    */
-  function count({store, start, end}) {
+  function count({store, start, end} = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         if (!db) {
@@ -353,7 +353,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param spread 可选. 数组是否遍历后存储, 如果有指定keyPath一定会遍历数组
    * @returns {Promise}
    */
-  function set({store, val, key, spread = true}) {
+  function set({store, val, key, spread = true} = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         if (!db) {
@@ -384,7 +384,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param end  可选. 索引结束值, 只删单个索引, 传入跟start相同的值即可; 删除所有小于end的数据, start不传即可
    * @returns {Promise}
    */
-  function del({store, start, end}) {
+  function del({store, start, end} = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         if (!db) {
@@ -412,7 +412,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param store 可选, 不传会将undefined转为字符串'undefined'
    * @returns {Promise}
    */
-  function clear({store}) {
+  function clear({store} = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         if (!db) {
