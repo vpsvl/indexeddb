@@ -89,11 +89,12 @@ export const db = createIndexedDB('databaseName')
 * direction 可选. 光标的遍历方向, 值为以下4个: 'next'(下一个),'nextunique'(下一个不包括重复值),'prev'(上一个),'prevunique'(上一个不包括重复值)
 * filter 可选. 过滤数据方法
 
-#### db.count({store, start, end})
+#### db.count({store, index, start, end})
 
 查询objectStore中的数据总条数
 
 * store 可选. 需要查询数据的objectStore名, 不传会将undefined转为字符串'undefined'
+* index 可选. 索引名, 如果不传索引, start和end为主键范围
 * start  可选. 索引的起始值, 查询表中所有数据start和end都不传即可; 只查询大于start的数据, end不传即可
 * end  可选. 索引结束值, 只查单个索引, 传入跟start相同的值即可; 查询所有小于end的数据, start不传即可
 
@@ -112,7 +113,7 @@ export const db = createIndexedDB('databaseName')
 
 * store 可选. 需要删除数据的objectStore名, 不传会将undefined转为字符串'undefined'
 * start 可选. 主键的起始值, 删除表中所有数据start和end都不传即可(等同于clear方法); 只查询大于start的数据, end不传即可
-* end  可选. 索引结束值, 只删单个索引, 传入跟start相同的值即可; 删除所有小于end的数据, start不传即可
+* end  可选. 主键的结束值, 只删单个数据, 传入跟start相同的值即可; 删除所有小于end的数据, start不传即可
 #### db.clear({store})
 
 清空objectStore中的数据, 成功会resolve('done')

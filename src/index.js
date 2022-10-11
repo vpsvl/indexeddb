@@ -270,45 +270,54 @@ export default function createIndexedDB(name = 'indexedDB') {
           direction = 'next';
         }
         let total = 0;
-        let requestCount = indexObj.count();
-        requestCount.onerror = (e) => {
-          reject(e.target.error);
-        };
-        requestCount.onsuccess = (e) => {
-          total = e.target.result;
-          if (total <= size * (page - 1)) {
-            resolve({
-              total,
-              list: [],
-            });
-          }
-        };
         let cursorNum = 0;
         let list = [];
         const isFilter = typeOf(filter) === 'Function';
+        if (!isFilter) {
+          let requestCount = indexObj.count();
+          requestCount.onerror = (e) => {
+            reject(e.target.error);
+          };
+          requestCount.onsuccess = (e) => {
+            total = e.target.result;
+            if (total <= size * (page - 1)) {
+              resolve({
+                total,
+                list: [],
+              });
+            }
+          };
+        }
         let request = indexObj.openCursor(range, direction);
         request.onsuccess = (e) => {
           let cursor = e.target.result;
-          if (!cursor || cursorNum >= page * size) {
-            return resolve({
-              total,
-              list,
-            });
-          }
           if (isFilter) {
+            if (!cursor) {
+              return resolve({
+                total: cursorNum,
+                list,
+              });
+            }
             if (filter(cursor.value)) {
               cursorNum++;
-              if (cursorNum > size * (page - 1)) {
+              if (cursorNum > size * (page - 1) && cursorNum <= page * size) {
                 list.push(cursor.value);
               }
             }
+            cursor.continue();
           } else {
+            if (!cursor || cursorNum >= page * size) {
+              return resolve({
+                total,
+                list,
+              });
+            }
             cursorNum++;
             if (cursorNum > size * (page - 1)) {
               list.push(cursor.value);
             }
+            cursor.continue();
           }
-          cursor.continue();
         };
       } catch (err) {
         reject(err);
@@ -318,12 +327,13 @@ export default function createIndexedDB(name = 'indexedDB') {
 
   /**
    * 查询objectStore中的数据总条数
+   * @param index 可选. 索引名, 如果不传索引, start和end为主键范围
    * @param store  可选. 需要查询数据的objectStore名, 不传会将undefined转为字符串'undefined'
    * @param start  可选. 索引的起始值, 查询表中所有数据start和end都不传即可; 只查询大于start的数据, end不传即可
    * @param end  可选. 索引结束值, 只查单个索引, 传入跟start相同的值即可; 查询所有小于end的数据, start不传即可
    * @returns {Promise}
    */
-  function count({store, start, end} = {}) {
+  function count({store, index, start, end} = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         if (!db) {
@@ -332,7 +342,8 @@ export default function createIndexedDB(name = 'indexedDB') {
         store = keyToString(store);
         const transaction = db.transaction([store], 'readonly');
         const objectStore = transaction.objectStore(store);
-        let request = objectStore.count(getRange(start, end));
+        const indexObj = index ? objectStore.index(index) : objectStore;
+        let request = indexObj.count(getRange(start, end));
         request.onerror = (e) => {
           reject(e.target.error);
         };
@@ -381,7 +392,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * 删除objectStore中的数据, 成功会resolve('done')
    * @param store  可选. 需要删除数据的objectStore名, 不传会将undefined转为字符串'undefined'
    * @param start  可选. 主键的起始值, 删除表中所有数据start和end都不传即可(等同于clear方法); 只查询大于start的数据, end不传即可
-   * @param end  可选. 索引结束值, 只删单个索引, 传入跟start相同的值即可; 删除所有小于end的数据, start不传即可
+   * @param end  可选. 主键的结束值, 只删单个数据, 传入跟start相同的值即可; 删除所有小于end的数据, start不传即可
    * @returns {Promise}
    */
   function del({store, start, end} = {}) {
