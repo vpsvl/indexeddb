@@ -1,6 +1,6 @@
 {
   "name": "@vpsvl/indexeddb",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "HTML5 indexedDB",
   "keywords": [
     "indexedDB",

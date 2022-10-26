@@ -1,4 +1,4 @@
-import {typeOf, keyToString, getRange, setItem} from './utils';
+import {typeOf, keyToString, getRange, setItem, directions} from './utils';
 
 /**
  * indexedDB的增删改查:
@@ -210,7 +210,6 @@ export default function createIndexedDB(name = 'indexedDB') {
         const objectStore = transaction.objectStore(store);
         const indexObj = objectStore.index(index);
         let range = getRange(start, end);
-        const directions = {next: true, nextunique: true, prev: true, prevunique: true};
         if (!directions[direction]) {
           direction = 'next';
         }
@@ -265,7 +264,6 @@ export default function createIndexedDB(name = 'indexedDB') {
         const objectStore = transaction.objectStore(store);
         const indexObj = objectStore.index(index);
         let range = getRange(start, end);
-        const directions = {next: true, nextunique: true, prev: true, prevunique: true};
         if (!directions[direction]) {
           direction = 'next';
         }
@@ -362,9 +360,10 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param val  必选. 添加/修改的数据, 如果为数组且遍历该数组, 每个元素作为一条数据进行添加/修改. 如果添加objectStore有指定主键, 那么val必须为包含主键属性的对象或数组中每个元素都为为包含主键属性的对象
    * @param key  可选. 如果有指定keyPath, 该值会被忽略. 如果val为对象或数组中元素为对象, 可以是其中的属性名
    * @param spread 可选. 数组是否遍历后存储, 如果有指定keyPath一定会遍历数组
+   * @param onlyAdd 可选. 是否只添加不修改
    * @returns {Promise}
    */
-  function set({store, val, key, spread = true} = {}) {
+  function set({store, val, key, spread = true, onlyAdd = false} = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         if (!db) {

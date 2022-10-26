@@ -16,6 +16,9 @@ export function keyToString(key) {
   return typeof key === 'string' ? key : JSON.stringify(key);
 }
 
+// 游标方向
+export const directions = {next: true, nextunique: true, prev: true, prevunique: true};
+
 /**
  * 返回游标范围
  * @param start  可选. 索引的起始值, 查询表中所有数据start和end都不传即可; 只查询大于start的数据, end不传即可
@@ -42,9 +45,10 @@ export function getRange(start, end) {
  * @param objectStore
  * @param val
  * @param key
+ * @param onlyAdd
  * @returns {Promise}
  */
-export function setItem(objectStore, val, key) {
+export function setItem(objectStore, val, key, onlyAdd) {
   return new Promise((resolve) => {
     let _key;
     if (objectStore.keyPath === null) {
@@ -53,12 +57,13 @@ export function setItem(objectStore, val, key) {
       console.warn(`The object store uses in-line keys and the key '${key}' was provided`);
       return resolve(false);
     }
-    let request = _key ? objectStore.put(val, _key) : objectStore.put(val);
+    const opr = onlyAdd ? 'add' : 'put';
+    const request = _key ? objectStore[opr](val, _key) : objectStore[opr](val);
     request.onsuccess = (e) => {
       resolve(true);
     };
     request.onerror = (e) => {
-      console.warn(e);
+      console.warn(e.target.error);
       resolve(false);
     };
   });
