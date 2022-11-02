@@ -45,10 +45,10 @@ export function getRange(start, end) {
  * @param objectStore
  * @param val
  * @param key
- * @param onlyAdd
+ * @param opr
  * @returns {Promise}
  */
-export function setItem(objectStore, val, key, onlyAdd) {
+export function setItem(objectStore, val, key, opr = 'put') {
   return new Promise((resolve) => {
     let _key;
     if (objectStore.keyPath === null) {
@@ -57,13 +57,12 @@ export function setItem(objectStore, val, key, onlyAdd) {
       console.warn(`The object store uses in-line keys and the key '${key}' was provided`);
       return resolve(false);
     }
-    const opr = onlyAdd ? 'add' : 'put';
     const request = _key ? objectStore[opr](val, _key) : objectStore[opr](val);
     request.onsuccess = (e) => {
       resolve(true);
     };
     request.onerror = (e) => {
-      console.warn(e.target.error);
+      // console.warn(e.target.error);
       resolve(false);
     };
   });

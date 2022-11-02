@@ -373,12 +373,13 @@ export default function createIndexedDB(name = 'indexedDB') {
         const transaction = db.transaction([store], 'readwrite');
         const objectStore = transaction.objectStore(store);
         const result = [];
+        const opr = onlyAdd ? 'add' : 'put';
         if (typeOf(val) === 'Array' && (spread || objectStore.keyPath !== null)) {
           for (let item of val) {
-            result.push(await setItem(objectStore, item, key));
+            result.push(await setItem(objectStore, item, key, opr));
           }
         } else {
-          result.push(await setItem(objectStore, val, key));
+          result.push(await setItem(objectStore, val, key, opr));
         }
         resolve(result);
       } catch (err) {
