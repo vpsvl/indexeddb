@@ -108,13 +108,15 @@ export const db = createIndexedDB('databaseName')
 * spread 可选. 数组是否遍历后存储, 如果有指定keyPath一定会遍历数组
 * onlyAdd 可选. 是否只添加不修改, 因为add方法完成时会关闭事务, 所以只支持添加单条数据
 
-#### db.del({store, start, end})
+#### db.del({store, index, start, end, filter})
 
 删除objectStore中的数据, 成功会resolve('done')
 
 * store 可选. 需要删除数据的objectStore名, 不传会将undefined转为字符串'undefined'
+* index 可选. 索引名, 如果不传索引, start和end为主键范围
 * start 可选. 主键的起始值, 删除表中所有数据start和end都不传即可(等同于clear方法); 只查询大于start的数据, end不传即可
 * end 可选. 主键的结束值, 只删单个数据, 传入跟start相同的值即可; 删除所有小于end的数据, start不传即可
+* filter 可选. 过滤数据方法
 
 #### db.clear({store})
 

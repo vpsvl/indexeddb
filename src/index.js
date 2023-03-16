@@ -214,7 +214,7 @@ export default function createIndexedDB(name = 'indexedDB') {
           direction = 'next';
         }
         const isFilter = typeOf(filter) === 'Function';
-        let request = indexObj.openCursor(range, direction);
+        const request = indexObj.openCursor(range, direction);
         let result = [];
         request.onsuccess = (e) => {
           let cursor = e.target.result;
@@ -272,7 +272,7 @@ export default function createIndexedDB(name = 'indexedDB') {
         let list = [];
         const isFilter = typeOf(filter) === 'Function';
         if (!isFilter) {
-          let requestCount = indexObj.count();
+          const requestCount = indexObj.count();
           requestCount.onerror = (e) => {
             reject(e.target.error);
           };
@@ -286,7 +286,7 @@ export default function createIndexedDB(name = 'indexedDB') {
             }
           };
         }
-        let request = indexObj.openCursor(range, direction);
+        const request = indexObj.openCursor(range, direction);
         request.onsuccess = (e) => {
           let cursor = e.target.result;
           if (isFilter) {
@@ -341,7 +341,7 @@ export default function createIndexedDB(name = 'indexedDB') {
         const transaction = db.transaction([store], 'readonly');
         const objectStore = transaction.objectStore(store);
         const indexObj = index ? objectStore.index(index) : objectStore;
-        let request = indexObj.count(getRange(start, end));
+        const request = indexObj.count(getRange(start, end));
         request.onerror = (e) => {
           reject(e.target.error);
         };
@@ -391,11 +391,13 @@ export default function createIndexedDB(name = 'indexedDB') {
   /**
    * 删除objectStore中的数据, 成功会resolve('done')
    * @param store  可选. 需要删除数据的objectStore名, 不传会将undefined转为字符串'undefined'
+   * @param index 可选. 索引名, 如果不传索引, start和end为主键范围
    * @param start  可选. 主键的起始值, 删除表中所有数据start和end都不传即可(等同于clear方法); 只查询大于start的数据, end不传即可
    * @param end  可选. 主键的结束值, 只删单个数据, 传入跟start相同的值即可; 删除所有小于end的数据, start不传即可
+   * @param filter 可选. 过滤数据方法
    * @returns {Promise}
    */
-  function del({store, start, end} = {}) {
+  function del({store, index, start, end, filter} = {}) {
     return new Promise(async (resolve, reject) => {
       try {
         if (!db) {
@@ -405,13 +407,48 @@ export default function createIndexedDB(name = 'indexedDB') {
         const transaction = db.transaction([store], 'readwrite');
         const objectStore = transaction.objectStore(store);
         const range = getRange(start, end);
-        let request = range ? objectStore.delete(range) : objectStore.clear();
-        request.onsuccess = (e) => {
-          resolve(e.target.readyState);
-        };
-        request.onerror = (e) => {
-          reject(e.target.error);
-        };
+        const isFilter = typeOf(filter) === 'Function';
+        // 使用索引
+        if (index) {
+          const indexObj = objectStore.index(index);
+          const request = indexObj.openCursor(range);
+          request.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (!cursor) {
+              resolve(e.target.readyState);
+            }
+            if (isFilter) {
+              if (filter(cursor.value)) {
+                cursor.delete();
+              }
+            } else {
+              cursor.delete();
+            }
+          };
+          return;
+        }
+        // 不使用索引
+        if (isFilter) {
+          // 需要过滤的情况使用游标
+          const request = objectStore.openCursor(range);
+          request.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (!cursor) {
+              resolve(e.target.readyState);
+            }
+            if (filter(cursor.value)) {
+              cursor.delete();
+            }
+          };
+        } else {
+          const request = range ? objectStore.delete(range) : objectStore.clear();
+          request.onsuccess = (e) => {
+            resolve(e.target.readyState);
+          };
+          request.onerror = (e) => {
+            reject(e.target.error);
+          };
+        }
       } catch (err) {
         reject(err);
       }
