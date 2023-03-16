@@ -19,7 +19,7 @@ export default function createIndexedDB(name = 'indexedDB') {
   let db = null;
   // 版本号
   let version = Date.now();
-
+  
   /**
    * 删除数据库
    * @returns {Promise}
@@ -36,7 +36,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       };
     });
   }
-
+  
   /**
    * 打开数据库
    * @returns {Promise}
@@ -60,7 +60,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       request.onblocked = (e) => close();
     });
   }
-
+  
   /**
    * 关闭数据库
    */
@@ -70,7 +70,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       db = null;
     }
   }
-
+  
   /**
    * 判断数据库中是否存在objectStore
    * @param store 可选. 不传会将undefined转为字符串'undefined'
@@ -86,7 +86,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       throw e;
     }
   }
-
+  
   /**
    * 创建objectStore, 建议使用索引
    * @param store  可选. 要创建的objectStore的名字, 不传会将undefined转为字符串'undefined'
@@ -129,7 +129,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       };
     });
   }
-
+  
   /**
    * 删除objectStore
    * @param store 可选. 删除的objectStore名, 不传会将undefined转为字符串'undefined'
@@ -158,7 +158,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       };
     });
   }
-
+  
   /**
    * 根据主键值key来获取数据, resolve查到的数据
    * @param store 可选. 需要查询数据的objectStore名, 不传会将undefined转为字符串'undefined'
@@ -187,7 +187,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       }
     });
   }
-
+  
   /**
    * 通过游标来获取指定索引跟范围的值,成功会resolve查到的数据(Array)
    * 对有建立索引的objectStore, 建议使用游标来查询
@@ -216,26 +216,33 @@ export default function createIndexedDB(name = 'indexedDB') {
         const isFilter = typeOf(filter) === 'Function';
         const request = indexObj.openCursor(range, direction);
         let result = [];
-        request.onsuccess = (e) => {
-          let cursor = e.target.result;
-          if (!cursor) {
-            return resolve(result);
-          }
-          if (isFilter) {
+        if (isFilter) {
+          request.onsuccess = (e) => {
+            let cursor = e.target.result;
+            if (!cursor) {
+              return resolve(result);
+            }
             if (filter(cursor.value)) {
               result.push(cursor.value);
             }
-          } else {
+            cursor.continue();
+          };
+        } else {
+          request.onsuccess = (e) => {
+            let cursor = e.target.result;
+            if (!cursor) {
+              return resolve(result);
+            }
             result.push(cursor.value);
-          }
-          cursor.continue();
-        };
+            cursor.continue();
+          };
+        }
       } catch (err) {
         reject(err);
       }
     });
   }
-
+  
   /**
    * 通过游标来获取指定索引跟范围的值,成功会resolve({total: Number //总条数, list: Array //列表数据})
    * @param store   可选. 需要查询数据的objectStore名, 不传会将undefined转为字符串'undefined'
@@ -271,25 +278,10 @@ export default function createIndexedDB(name = 'indexedDB') {
         let cursorNum = 0;
         let list = [];
         const isFilter = typeOf(filter) === 'Function';
-        if (!isFilter) {
-          const requestCount = indexObj.count();
-          requestCount.onerror = (e) => {
-            reject(e.target.error);
-          };
-          requestCount.onsuccess = (e) => {
-            total = e.target.result;
-            if (total <= size * (page - 1)) {
-              resolve({
-                total,
-                list: [],
-              });
-            }
-          };
-        }
-        const request = indexObj.openCursor(range, direction);
-        request.onsuccess = (e) => {
-          let cursor = e.target.result;
-          if (isFilter) {
+        if (isFilter) {
+          const request = indexObj.openCursor(range, direction);
+          request.onsuccess = (e) => {
+            let cursor = e.target.result;
             if (!cursor) {
               return resolve({
                 total: cursorNum,
@@ -303,7 +295,24 @@ export default function createIndexedDB(name = 'indexedDB') {
               }
             }
             cursor.continue();
-          } else {
+          };
+        } else {
+          const requestCount = indexObj.count();
+          requestCount.onerror = (e) => {
+            reject(e.target.error);
+          };
+          requestCount.onsuccess = (e) => {
+            total = e.target.result;
+            if (total <= size * (page - 1)) {
+              resolve({
+                total,
+                list: [],
+              });
+            }
+          };
+          const request = indexObj.openCursor(range, direction);
+          request.onsuccess = (e) => {
+            let cursor = e.target.result;
             if (!cursor || cursorNum >= page * size) {
               return resolve({
                 total,
@@ -315,14 +324,14 @@ export default function createIndexedDB(name = 'indexedDB') {
               list.push(cursor.value);
             }
             cursor.continue();
-          }
-        };
+          };
+        }
       } catch (err) {
         reject(err);
       }
     });
   }
-
+  
   /**
    * 查询objectStore中的数据总条数
    * @param index 可选. 索引名, 如果不传索引, start和end为主键范围
@@ -353,7 +362,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       }
     });
   }
-
+  
   /**
    * 添加/修改数据, 成功会resolve([true/false, true/false, ...])
    * @param store  可选. 需要添加/修改数据的objectStore名, 不传会将undefined转为字符串'undefined'
@@ -387,7 +396,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       }
     });
   }
-
+  
   /**
    * 删除objectStore中的数据, 成功会resolve('done')
    * @param store  可选. 需要删除数据的objectStore名, 不传会将undefined转为字符串'undefined'
@@ -412,19 +421,25 @@ export default function createIndexedDB(name = 'indexedDB') {
         if (index) {
           const indexObj = objectStore.index(index);
           const request = indexObj.openCursor(range);
-          request.onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (!cursor) {
-              resolve(e.target.readyState);
-            }
-            if (isFilter) {
+          if (isFilter) {
+            request.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (!cursor) {
+                resolve(e.target.readyState);
+              }
               if (filter(cursor.value)) {
                 cursor.delete();
               }
-            } else {
+            };
+          } else {
+            request.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (!cursor) {
+                resolve(e.target.readyState);
+              }
               cursor.delete();
-            }
-          };
+            };
+          }
           return;
         }
         // 不使用索引
@@ -454,7 +469,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       }
     });
   }
-
+  
   /**
    * 清空objectStore中的数据, 成功会resolve('done')
    * @param store 可选, 不传会将undefined转为字符串'undefined'
@@ -481,7 +496,7 @@ export default function createIndexedDB(name = 'indexedDB') {
       }
     });
   }
-
+  
   return {
     delDB,
     hasStore,
