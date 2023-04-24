@@ -51,18 +51,29 @@ export function getRange(start, end) {
 export function setItem(objectStore, val, key, opr = 'put') {
   return new Promise((resolve) => {
     let _key;
+    const isObject = typeOf(val) === 'Object';
     if (objectStore.keyPath === null) {
-      _key = typeOf(val) === 'Object' && Reflect.has(val, key) ? val[key] : key;
-    } else if (typeOf(val) !== 'Object' || !Reflect.has(val, objectStore.keyPath)) {
+      _key = isObject && Reflect.has(val, key) ? val[key] : key;
+      if (opr === 'add' && objectStore.autoIncrement) {
+        _key = undefined;
+      }
+    } else if (!isObject || !Reflect.has(val, objectStore.keyPath)) {
       console.warn(`The object store uses in-line keys and the key '${key}' was provided`);
       return resolve(false);
     }
+    
     const request = _key ? objectStore[opr](val, _key) : objectStore[opr](val);
-    request.onsuccess = (e) => {
-      resolve(true);
-    };
+    if (opr === 'add') {
+      // add需要完成后再返回
+      request.oncomplete = (e) => {
+        resolve(true);
+      };
+    } else {
+      request.onsuccess = (e) => {
+        resolve(true);
+      };
+    }
     request.onerror = (e) => {
-      // console.warn(e.target.error);
       resolve(false);
     };
   });

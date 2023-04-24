@@ -192,7 +192,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * 通过游标来获取指定索引跟范围的值,成功会resolve查到的数据(Array)
    * 对有建立索引的objectStore, 建议使用游标来查询
    * @param store   可选. 需要查询数据的objectStore名, 不传会将undefined转为字符串'undefined'
-   * @param index  必选. 索引名
+   * @param index 可选. 索引名, 如果不传索引, start和end为主键范围
    * @param start  可选. 索引的起始值, 查询表中所有数据start和end都不传即可; 只查询大于start的数据, end不传即可
    * @param end  可选. 索引结束值, 只查单个索引, 传入跟start相同的值即可; 查询所有小于end的数据, start不传即可
    * @param direction 可选. 默认next. 光标的遍历方向, 值为以下4个: 'next'(下一个),'nextunique'(下一个不包括重复值),'prev'(上一个),'prevunique'(上一个不包括重复值)
@@ -208,15 +208,14 @@ export default function createIndexedDB(name = 'indexedDB') {
         store = keyToString(store);
         const transaction = db.transaction([store], 'readonly');
         const objectStore = transaction.objectStore(store);
-        const indexObj = objectStore.index(index);
         let range = getRange(start, end);
+        const indexObj = objectStore.indexNames.contains(index) ? objectStore.index(index) : objectStore;
         if (!directions[direction]) {
           direction = 'next';
         }
-        const isFilter = typeOf(filter) === 'Function';
         const request = indexObj.openCursor(range, direction);
         let result = [];
-        if (isFilter) {
+        if (typeOf(filter) === 'Function') {
           request.onsuccess = (e) => {
             let cursor = e.target.result;
             if (!cursor) {
@@ -246,7 +245,7 @@ export default function createIndexedDB(name = 'indexedDB') {
   /**
    * 通过游标来获取指定索引跟范围的值,成功会resolve({total: Number //总条数, list: Array //列表数据})
    * @param store   可选. 需要查询数据的objectStore名, 不传会将undefined转为字符串'undefined'
-   * @param index  必选. 索引名
+   * @param index 可选. 索引名, 如果不传索引, start和end为主键范围
    * @param start  可选. 索引的起始值, 查询表中所有数据start和end都不传即可; 只查询大于start的数据, end不传即可
    * @param end  可选. 索引结束值, 只查单个索引, 传入跟start相同的值即可; 查询所有小于end的数据, start不传即可
    * @param page 可选. 默认1. 页码, Number
@@ -269,16 +268,15 @@ export default function createIndexedDB(name = 'indexedDB') {
         store = keyToString(store);
         const transaction = db.transaction([store], 'readonly');
         const objectStore = transaction.objectStore(store);
-        const indexObj = objectStore.index(index);
         let range = getRange(start, end);
+        const indexObj = objectStore.indexNames.contains(index) ? objectStore.index(index) : objectStore;
         if (!directions[direction]) {
           direction = 'next';
         }
         let total = 0;
         let cursorNum = 0;
         let list = [];
-        const isFilter = typeOf(filter) === 'Function';
-        if (isFilter) {
+        if (typeOf(filter) === 'Function') {
           const request = indexObj.openCursor(range, direction);
           request.onsuccess = (e) => {
             let cursor = e.target.result;
@@ -369,7 +367,7 @@ export default function createIndexedDB(name = 'indexedDB') {
    * @param val  必选. 添加/修改的数据, 如果为数组且遍历该数组, 每个元素作为一条数据进行添加/修改. 如果添加objectStore有指定主键, 那么val必须为包含主键属性的对象或数组中每个元素都为为包含主键属性的对象
    * @param key  可选. 如果有指定keyPath, 该值会被忽略. 如果val为对象或数组中元素为对象, 可以是其中的属性名
    * @param spread 可选. 数组是否遍历后存储, 如果有指定keyPath一定会遍历数组
-   * @param onlyAdd 可选. 是否只添加不修改, 因为add方法完成时会关闭事务, 所以只支持添加单条数据
+   * @param onlyAdd 可选. 是否只添加不修改
    * @returns {Promise}
    */
   function set({store, val, key, spread = true, onlyAdd = false} = {}) {
@@ -379,16 +377,22 @@ export default function createIndexedDB(name = 'indexedDB') {
           await open();
         }
         store = keyToString(store);
+        const result = [];
+        let data = typeOf(val) === 'Array' && spread ? val : [val];
+        // add方法完成时会关闭事务, 每次循环都需要创建
+        if (onlyAdd) {
+          for (let item of data) {
+            const transaction = db.transaction([store], 'readwrite');
+            const objectStore = transaction.objectStore(store);
+            result.push(await setItem(objectStore, item, key, 'add'));
+          }
+          return resolve(result);
+        }
+        // put方法不会关闭事务
         const transaction = db.transaction([store], 'readwrite');
         const objectStore = transaction.objectStore(store);
-        const result = [];
-        if (typeOf(val) === 'Array' && (spread || objectStore.keyPath !== null)) {
-          for (let item of val) {
-            result.push(await setItem(objectStore, item, key, 'put'));
-          }
-        } else {
-          const opr = onlyAdd ? 'add' : 'put';
-          result.push(await setItem(objectStore, val, key, opr));
+        for (let item of data) {
+          result.push(await setItem(objectStore, item, key, 'put'));
         }
         resolve(result);
       } catch (err) {

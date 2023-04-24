@@ -9,7 +9,7 @@
 ### 1.0.2
 
 * 修复`findPage`方法分页查询总条数获取错误
-* `count`方法添加参数`index`, 可使用索引查询
+* `count`方法添加参数`index`
 
 ### 1.0.3
 
@@ -26,3 +26,8 @@
 ### 1.06
 
 * `del`方法添加参数`index`和`filter`, 可使用索引删除和过滤可删除的数据
+
+### 1.07
+
+* 修复`set`方法参数`onlyAdd`在`spread`为`true`时, 可遍历数组添加数据
+* 修改`find`和`findPage`方法参数`index`可选, 如果不传`index`或`index`不存在索引中, `start`和`end`为主键范围

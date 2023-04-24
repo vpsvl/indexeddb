@@ -70,7 +70,7 @@ export const db = createIndexedDB('databaseName')
 通过游标来获取指定索引跟范围的值, 成功会resolve查到的数据(Array)
 
 * store 可选. 需要查询数据的objectStore名, 不传会将undefined转为字符串'undefined'
-* index 必选. 索引名
+* index 可选. 索引名, 如果不传索引, start和end为主键范围
 * start 可选. 索引的起始值, 查询表中所有数据start和end都不传即可; 只查询大于start的数据, end不传即可
 * end 可选. 索引结束值, 只查单个索引, 传入跟start相同的值即可; 查询所有小于end的数据, start不传即可
 * direction 可选. 默认next. 光标的遍历方向, 值为以下4个: 'next'(下一个),'nextunique'(下一个不包括重复值),'prev'(上一个),'prevunique'(上一个不包括重复值)
@@ -81,7 +81,7 @@ export const db = createIndexedDB('databaseName')
 通过游标来获取指定索引跟范围的值, 成功会resolve({total: Number //总条数, list: Array //列表数据})
 
 * store 可选. 需要查询数据的objectStore名, 不传会将undefined转为字符串'undefined'
-* index 必选. 索引名
+* index 可选. 索引名, 如果不传索引, start和end为主键范围
 * start 可选. 索引的起始值, 查询表中所有数据start和end都不传即可; 只查询大于start的数据, end不传即可
 * end 可选. 索引结束值, 只查单个索引,传入跟start相同的值即可;查询所有小于end的数据, start不传即可
 * page 可选. 默认1. 页码, Number
@@ -106,7 +106,7 @@ export const db = createIndexedDB('databaseName')
 * val 必选. 添加/修改的数据, 如果为数组且遍历该数组, 每个元素作为一条数据进行添加/修改. 如果添加objectStore有指定主键, 那么val必须为包含主键属性的对象或数组中每个元素都为为包含主键属性的对象
 * key 可选. 如果有指定keyPath, 该值会被忽略. 如果val为对象或数组中元素为对象, 可以是其中的属性名
 * spread 可选. 数组是否遍历后存储, 如果有指定keyPath一定会遍历数组
-* onlyAdd 可选. 是否只添加不修改, 因为add方法完成时会关闭事务, 所以只支持添加单条数据
+* onlyAdd 可选. 是否只添加不修改
 
 #### db.del({store, index, start, end, filter})
 
