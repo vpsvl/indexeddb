@@ -45,10 +45,10 @@ export const db = createIndexedDB('databaseName')
 
 #### db.addStore({store, index, key, replace = false})
 
-创建objectStore, 建议使用索引
+创建objectStore, 建议设置主键以避免更新数据时与系统设置的主键不一致导致更新出现错误; 设置索引以便于查询数据, 主键不需要再建索引
 
 * store 可选. 要创建的objectStore的名字, 不传会将undefined转为字符串'undefined'
-* index 可选. 需要创建objectStore索引时传入,key为字段名,value为boolean表示是否允许重复
+* index 可选. 需要创建objectStore索引时传入, key为字段名, value为boolean表示是否允许重复
 * key 可选. 主键名, 对应每条数据必须为包含keyPath属性的对象; 不传则使用主键自增(默认从1开始, 如果之前有number类型的主键, 会对最大一个number类型主键取整数, 然后加1作为自增后的主键)
 * replace 可选. 如果表存在是否先删除再创建, 默认不删除不创建
 

@@ -17,7 +17,12 @@ export function keyToString(key) {
 }
 
 // 游标方向
-export const directions = {next: true, nextunique: true, prev: true, prevunique: true};
+export const directions = {
+  next: true,
+  nextunique: true,
+  prev: true,
+  prevunique: true,
+};
 
 /**
  * 返回游标范围
@@ -50,31 +55,42 @@ export function getRange(start, end) {
  */
 export function setItem(objectStore, val, key, opr = 'put') {
   return new Promise((resolve) => {
-    let _key;
-    const isObject = typeOf(val) === 'Object';
-    if (objectStore.keyPath === null) {
-      _key = isObject && Reflect.has(val, key) ? val[key] : key;
+    try {
+      let _key;
+      const isObject = typeOf(val) === 'Object';
+      if (objectStore.keyPath === null) {
+        _key = isObject && Reflect.has(val, key) ? val[key] : key;
+      } else if (!isObject || !Reflect.has(val, objectStore.keyPath)) {
+        console.warn(`The object store uses in-line keys and the key '${key}' was provided`);
+        return resolve(false);
+      }
       if (opr === 'add' && objectStore.autoIncrement) {
         _key = undefined;
       }
-    } else if (!isObject || !Reflect.has(val, objectStore.keyPath)) {
-      console.warn(`The object store uses in-line keys and the key '${key}' was provided`);
-      return resolve(false);
-    }
-    
-    const request = _key ? objectStore[opr](val, _key) : objectStore[opr](val);
-    if (opr === 'add') {
-      // add需要完成后再返回
-      request.oncomplete = (e) => {
-        resolve(true);
+      const request = _key ? objectStore[opr](val, _key) : objectStore[opr](val);
+      if (opr === 'add') {
+        request.oncomplete = (e) => {
+          resolve(true);
+        };
+      } else {
+        request.onsuccess = (e) => {
+          resolve(true);
+        };
+      }
+      request.onerror = (e) => {
+        resolve(false);
       };
-    } else {
-      request.onsuccess = (e) => {
-        resolve(true);
-      };
-    }
-    request.onerror = (e) => {
+    } catch (e) {
+      console.log(e)
       resolve(false);
-    };
+    }
   });
 }
+
+// 更新store操作类型
+export const updateStoreActions = {
+  create: true,
+  update: true,
+  delete: true,
+  replace: true,
+};

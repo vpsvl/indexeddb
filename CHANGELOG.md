@@ -31,3 +31,7 @@
 
 * 修复`set`方法参数`onlyAdd`在`spread`为`true`时, 可遍历数组添加数据
 * 修改`find`和`findPage`方法参数`index`可选, 如果不传`index`或`index`不存在索引中, `start`和`end`为主键范围
+
+### 1.08
+
+* `set`方法中因事务关闭导致更新数据失败时, 返回`false`
