@@ -379,20 +379,10 @@ export default function createIndexedDB(name = 'indexedDB') {
         store = keyToString(store);
         const result = [];
         let data = typeOf(val) === 'Array' && spread ? val : [val];
-        // add方法完成时会关闭事务, 每次循环都需要创建
-        if (onlyAdd) {
-          for (let item of data) {
-            const transaction = db.transaction([store], 'readwrite');
-            const objectStore = transaction.objectStore(store);
-            result.push(await setItem(objectStore, item, key, 'add'));
-          }
-          return resolve(result);
-        }
-        // put方法不会关闭事务
-        const transaction = db.transaction([store], 'readwrite');
-        const objectStore = transaction.objectStore(store);
         for (let item of data) {
-          result.push(await setItem(objectStore, item, key, 'put'));
+          const transaction = db.transaction([store], 'readwrite');
+          const objectStore = transaction.objectStore(store);
+          result.push(await setItem(objectStore, item, key, onlyAdd ? 'add' : 'put'));
         }
         resolve(result);
       } catch (err) {

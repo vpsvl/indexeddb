@@ -68,20 +68,13 @@ export function setItem(objectStore, val, key, opr = 'put') {
         _key = undefined;
       }
       const request = _key ? objectStore[opr](val, _key) : objectStore[opr](val);
-      if (opr === 'add') {
-        request.oncomplete = (e) => {
-          resolve(true);
-        };
-      } else {
-        request.onsuccess = (e) => {
-          resolve(true);
-        };
-      }
+      request.oncomplete = (e) => {
+        resolve(true);
+      };
       request.onerror = (e) => {
         resolve(false);
       };
     } catch (e) {
-      console.log(e)
       resolve(false);
     }
   });
