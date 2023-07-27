@@ -415,25 +415,16 @@ export default function createIndexedDB(name = 'indexedDB') {
         if (index) {
           const indexObj = objectStore.index(index);
           const request = indexObj.openCursor(range);
-          if (isFilter) {
-            request.onsuccess = (e) => {
-              const cursor = e.target.result;
-              if (!cursor) {
-                resolve(e.target.readyState);
-              }
-              if (filter(cursor.value)) {
-                cursor.delete();
-              }
-            };
-          } else {
-            request.onsuccess = (e) => {
-              const cursor = e.target.result;
-              if (!cursor) {
-                resolve(e.target.readyState);
-              }
+          request.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (!cursor) {
+              return resolve(e.target.readyState);
+            }
+            if (!isFilter || filter(cursor.value)) {
               cursor.delete();
-            };
-          }
+            }
+            cursor.continue();
+          };
           return;
         }
         // 不使用索引
@@ -443,11 +434,12 @@ export default function createIndexedDB(name = 'indexedDB') {
           request.onsuccess = (e) => {
             const cursor = e.target.result;
             if (!cursor) {
-              resolve(e.target.readyState);
+              return resolve(e.target.readyState);
             }
             if (filter(cursor.value)) {
               cursor.delete();
             }
+            cursor.continue();
           };
         } else {
           const request = range ? objectStore.delete(range) : objectStore.clear();
