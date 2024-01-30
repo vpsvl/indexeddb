@@ -47,7 +47,7 @@ export function getRange(start, end) {
 
 /**
  * 添加/修改数据, 成功会resolve添加/修改的key
- * @param objectStore
+ * @param {object} objectStore
  * @param val
  * @param key
  * @param opr
