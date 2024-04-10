@@ -9,14 +9,14 @@ const entryFile = 'src/index.js';
 let pkg = [
   {
     format: 'cjs',
+    file: 'dist/index.c.js',
+    exports: 'default',
+  },
+  {
+    format: 'es',
     file: 'dist/index.js',
     exports: 'default',
   },
-  // {
-  //   format: 'es',
-  //   file: 'dist/index.es.js',
-  //   exports: 'auto',
-  // },
   {
     format: 'iife',
     file: 'dist/index.global.js',
